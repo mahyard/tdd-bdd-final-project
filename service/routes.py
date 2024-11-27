@@ -20,7 +20,7 @@ Product Store Service with UI
 """
 from flask import jsonify, request, abort
 from flask import url_for  # noqa: F401 pylint: disable=unused-import
-from service.models import Product
+from service.models import Product, Category
 from service.common import status  # HTTP Status Codes
 from . import app
 
@@ -86,11 +86,7 @@ def create_products():
 
     message = product.serialize()
 
-    #
-    # Uncomment this line of code once you implement READ A PRODUCT
-    #
-    # location_url = url_for("get_products", product_id=product.id, _external=True)
-    location_url = "/"  # delete once READ is implemented
+    location_url = url_for("get_products", product_id=product.id, _external=True)
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
@@ -98,31 +94,100 @@ def create_products():
 # L I S T   A L L   P R O D U C T S
 ######################################################################
 
-#
-# PLACE YOUR CODE TO LIST ALL PRODUCTS HERE
-#
+@app.route("/products", methods=["GET"])
+def list_products():
+    """
+    Returns a list of Products
+    """
+    available = request.args.get("available")
+    category = request.args.get("category")
+    if available:
+        available_value = available.lower() in ["true", "yes", "1"]
+        products = Product.find_by_availability(available_value)
+    elif category:
+        print(category)
+        category_value = getattr(Category, category.upper())
+        products = Product.find_by_category(category_value)
+    else:
+        products = Product.all()
+    results = [product.serialize() for product in products]
+
+    return jsonify(results), status.HTTP_200_OK
 
 ######################################################################
 # R E A D   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE HERE TO READ A PRODUCT
-#
+@app.route("/products/<int:product_id>", methods=["GET"])
+def get_products(product_id=0):
+    """
+    Returns a Product based on its id
+    """
+    app.logger.info("Request to find and return a Product...")
+
+    product = Product.find(product_id)
+
+    if not product:
+        message = {"msg": 'We did not found this product'}
+        return jsonify(message), status.HTTP_404_NOT_FOUND
+    message = product.serialize()
+
+    return jsonify(message), status.HTTP_200_OK
+
+@app.route("/products/<string:product_name>", methods=["GET"])
+def get_products_by_name(product_name=None):
+    """
+    Returns Products based on their name
+    """
+    app.logger.info("Request to find and return Products by name...")
+
+    products = Product.find_by_name(product_name)
+
+    if not products:
+        message = {"msg": 'We did not found this product'}
+        return jsonify(message), status.HTTP_404_NOT_FOUND
+    message = [prod.serialize() for prod in products]
+
+    return jsonify(message), status.HTTP_200_OK
 
 ######################################################################
 # U P D A T E   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE TO UPDATE A PRODUCT HERE
-#
+@app.route("/products", methods=["PUT"])
+def update_products():
+    """
+    Updates a Product based on recieved data
+    """
+    app.logger.info("Request to Update a Product...")
+    check_content_type("application/json")
+
+    data = request.get_json()
+    app.logger.info("Processing: %s", data)
+    product = Product.find(data["id"])
+    product.deserialize(data)
+    product.update()
+    app.logger.info("Product updated with new data!")
+
+    message = product.serialize()
+
+    location_url = url_for("get_products", product_id=product.id, _external=True)
+    return jsonify(message), status.HTTP_200_OK, {"Location": location_url}
 
 ######################################################################
 # D E L E T E   A   P R O D U C T
 ######################################################################
 
 
-#
-# PLACE YOUR CODE TO DELETE A PRODUCT HERE
-#
+@app.route("/products/<int:pid>", methods=["DELETE"])
+def delete_products(pid=0):
+    """
+    Deletes a Product based on recieved data
+    """
+    app.logger.info("Request to Delete a Product...")
+
+    product = Product.find(pid)
+    product.delete()
+    app.logger.info("Product deleted with new data!")
+
+    return "", status.HTTP_204_NO_CONTENT
