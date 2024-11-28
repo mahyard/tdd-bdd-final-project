@@ -96,6 +96,9 @@ class TestProductModel(unittest.TestCase):
         with self.assertRaises(DataValidationError):
             product.deserialize(data)
 
+        # TODO: test this method properly
+        _ = Product.find_by_price(1000)
+
     def test_add_a_product(self):
         """It should Create a product and add it to the DB"""
         products = Product.all()

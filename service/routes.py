@@ -143,10 +143,11 @@ def get_products_by_name(product_name=None):
 
     products = Product.find_by_name(product_name)
 
-    if not products:
+    message = [prod.serialize() for prod in products]
+    if not message:
         message = {"msg": 'We did not found this product'}
         return jsonify(message), status.HTTP_404_NOT_FOUND
-    message = [prod.serialize() for prod in products]
+
 
     return jsonify(message), status.HTTP_200_OK
 

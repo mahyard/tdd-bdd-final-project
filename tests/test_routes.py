@@ -233,6 +233,12 @@ class TestProductRoutes(TestCase):
         self.assertEqual(len(result), test_count)
         for item in result:
             self.assertEqual(item["name"], test_name)
+
+    def test_unavailable_product_name(self):
+        """It should make an unsuccessful Query for a fake name"""
+        response = self.client.get(f"{BASE_URL}/fake-unavailable-product-name")
+        self.assertEqual(response.status_code,  status.HTTP_404_NOT_FOUND)
+
         
     def test_query_by_category(self):
         """It should Query Products by category"""
